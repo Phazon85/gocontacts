@@ -8,6 +8,9 @@ const (
 )
 
 func main() {
+
+	//load DB connection
 	db := multisql.NewDBObject(configFile, driverName)
 	
+	router := handler.
 }
