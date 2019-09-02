@@ -1,6 +1,9 @@
 package main
 
-import "github.com/phazon85/multisql"
+import (
+	"github.com/phazon85/go_contacts/handler"
+	"github.com/phazon85/multisql"
+)
 
 const (
 	configFile = "dev.yaml"
@@ -11,6 +14,7 @@ func main() {
 
 	//load DB connection
 	db := multisql.NewDBObject(configFile, driverName)
-	
-	router := handler.
+
+	//intializes HTTP router
+	handler := handler.NewEntryHandler(db)
 }
