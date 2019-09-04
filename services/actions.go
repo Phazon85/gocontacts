@@ -12,11 +12,15 @@ var (
 	errLastNameNil  = errors.New("LastName cannot be nil")
 	errEmailNil     = errors.New("Email cannot be nil")
 	errPhoneNil     = errors.New("Phone cannot be nil")
+	errNoID         = errors.New("id cannot be nil")
+	errEmailExists  = errors.New("Email already exists")
+	errNotFound     = errors.New("not found")
 )
 
 //Actions implements methods for handling contact entries
 type Actions interface {
 	AllEntries() ([]*Entry, error)
+	EntryByID(id string) (*Entry, error)
 }
 
 //Entry defines a contact entry in the DB
