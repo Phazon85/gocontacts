@@ -54,28 +54,45 @@ func (p *PSQLService) EntryByID(id string) (*Entry, error) {
 	return entry, nil
 }
 
-
-
 func (p *PSQLService) checkIfEmailExists(entry *Entry) error {
-	selector := Entry{
-		Email: entry.Email,
-	}
+	// selector := Entry{
+	// 	Email: entry.Email,
+	// }
 
 	result := &Entry{}
-	row := p.DB.QueryRow(checkIfEmailExists, selector.Email)
-	if err := row.Scan(&entry.ID, &entry.Email); err == nil && result.ID != entry.ID {
+	row := p.DB.QueryRow(checkIfEmailExists, entry.Email)
+	if err := row.Scan(&result.ID, &result.Email); err == nil && result.ID != entry.ID {
 		return errEmailExists
 	}
-	if err != nil {
-		switch err {
-			case 
-		}
-	}
-
+	return nil
 }
 
 //AddEntry takes an entry and inserts it into the DB generating an ID
 func (p *PSQLService) AddEntry(entry *Entry) error {
 	entry.Email = strings.ToLower(entry.Email)
+	result := p.checkIfEmailExists(entry)
+	if result != nil {
+		return result
+	}
 
+	_, err := p.DB.Exec(createEntry, entry.ID, entry.FirstName, entry.LastName, entry.Email, entry.Phone)
+	return err
+}
+
+//UpdateEntry will replace an existing entry with new values
+func (p *PSQLService) UpdateEntry(entry *Entry) error {
+	entry.Email = strings.ToLower(entry.Email)
+	result := p.checkIfEmailExists(entry)
+	if result != nil {
+		return result
+	}
+
+	_, err := p.DB.Exec(updateEntry, entry.ID, entry.FirstName, entry.LastName, entry.Email, entry.Phone)
+	return err
+}
+
+//DeleteEntry will delete a row with given id
+func (p *PSQLService) DeleteEntry(id string) error {
+	_, err := p.DB.Exec(deleteEntry, id)
+	return err
 }

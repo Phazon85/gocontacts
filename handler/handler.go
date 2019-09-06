@@ -15,6 +15,15 @@ func encodeJSON(w http.ResponseWriter, v interface{}) {
 	}
 }
 
+func decodeAndValidate(r *http.Request, v services.Validation) error {
+	if err := json.NewDecoder(r.Body).Decode(v); err != nil {
+		return err
+	}
+	defer r.Body.Close()
+
+	return v.Validate()
+}
+
 //EntryHandler implements the Actions interface
 type EntryHandler struct {
 	Service services.Actions
@@ -43,6 +52,51 @@ func (e *EntryHandler) HandleGetEntriesByID(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		log.Printf("Error getting todo by id: %s", err.Error())
 	}
-	w.
-		encodeJSON(w, res)
+	encodeJSON(w, res)
+}
+
+//HandleAddEntry handles adding an entry to the DB
+func (e *EntryHandler) HandleAddEntry(w http.ResponseWriter, r *http.Request) {
+	newEntry := &services.Entry{}
+	err := decodeAndValidate(r, newEntry)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+	err = e.Service.AddEntry(newEntry)
+	if err != nil {
+		log.Printf("Error adding Entry to DB: %s", err.Error())
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+//HandleUpdateEntry handles replacing an entry
+func (e *EntryHandler) HandleUpdateEntry(w http.ResponseWriter, r *http.Request) {
+	entry := &services.Entry{}
+	err := decodeAndValidate(r, entry)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	if entry.ID == "" {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+
+	err = e.Service.UpdateEntry(entry)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	w.WriteHeader(http.StatusAccepted)
+}
+
+//HandleDeleteEntry handles deleting an entry
+func (e *EntryHandler) HandleDeleteEntry(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	err := e.Service.DeleteEntry(vars["id"])
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

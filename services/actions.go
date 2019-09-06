@@ -21,11 +21,14 @@ var (
 type Actions interface {
 	AllEntries() ([]*Entry, error)
 	EntryByID(id string) (*Entry, error)
+	AddEntry(entry *Entry) error
+	UpdateEntry(entry *Entry) error
+	DeleteEntry(id string) error
 }
 
 //Entry defines a contact entry in the DB
 type Entry struct {
-	ID        int    `json:"ID"`
+	ID        string `json:"ID"`
 	FirstName string `json:"FirstName"`
 	LastName  string `json:"LastName"`
 	Email     string `json:"Email"`
