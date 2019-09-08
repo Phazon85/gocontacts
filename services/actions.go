@@ -3,6 +3,7 @@ package services
 import (
 	"database/sql"
 	"errors"
+	"os"
 )
 
 var (
@@ -24,6 +25,7 @@ type Actions interface {
 	AddEntry(entry *Entry) error
 	UpdateEntry(entry *Entry) error
 	DeleteEntry(id string) error
+	EntriesToCSV() (*os.File, error)
 }
 
 //Entry defines a contact entry in the DB

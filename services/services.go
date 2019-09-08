@@ -2,16 +2,20 @@ package services
 
 import (
 	"database/sql"
+	"io/ioutil"
+	"os"
 	"strings"
+
+	"github.com/gocarina/gocsv"
 )
 
 const (
-	allEntries         = "SELCET id, firstname, lastname, email, phone FROM entries;"
-	entryByID          = "SELECT id, firstname, lastname, email, phone FROM entries WHERE id=%1;"
-	createEntry        = "INSERT INTO entries (id, firstname, lastname, email, phone) VALUES (%1, %2, %3, %4, %5) RETURN id;"
-	deleteEntry        = "DELETE FROM entries WHERE id = %1"
-	updateEntry        = "UPDATE entries SET firstname=%2, lastname=%3, email=%4, phone=%5 WHERE id=%1"
-	checkIfEmailExists = "SELECT id, email FROM entries WHERE email=$1"
+	allEntries         = "SELCET entryid, firstname, lastname, email, phone FROM entries;"
+	entryByID          = "SELECT entryid, firstname, lastname, email, phone FROM entries WHERE entryid=%1;"
+	createEntry        = "INSERT INTO entries (firstname, lastname, email, phone) VALUES (%2, %3, %4, %5) RETURNING entryid;"
+	deleteEntry        = "DELETE FROM entries WHERE entryid = %1"
+	updateEntry        = "UPDATE entries SET firstname=%2, lastname=%3, email=%4, phone=%5 WHERE entryid=%1"
+	checkIfEmailExists = "SELECT entryid, email FROM entries WHERE email=$1"
 )
 
 //InitDB takes in a SQL object for package to use
@@ -95,4 +99,33 @@ func (p *PSQLService) UpdateEntry(entry *Entry) error {
 func (p *PSQLService) DeleteEntry(id string) error {
 	_, err := p.DB.Exec(deleteEntry, id)
 	return err
+}
+
+//EntriesToCSV will get all entries and write them to a CSV file
+func (p *PSQLService) EntriesToCSV() (*os.File, error) {
+	entries := []*Entry{}
+	rows, err := p.DB.Query(allEntries)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		newEntry := &Entry{}
+		err = rows.Scan(&newEntry.ID, &newEntry.FirstName, &newEntry.LastName, &newEntry.Email, &newEntry.Phone)
+		if err != nil {
+			return nil, err
+		}
+		entries = append(entries, newEntry)
+	}
+
+	entriesFile, err := ioutil.TempFile(os.TempDir(), "tmp.*.csv")
+	if err != nil {
+		return nil, err
+	}
+	err = gocsv.MarshalFile(&entries, entriesFile)
+	if err != nil {
+		return nil, err
+	}
+
+	return entriesFile, nil
 }
